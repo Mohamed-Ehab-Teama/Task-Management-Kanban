@@ -193,16 +193,16 @@ class TaskService
     /**
      * Archive Task
      */
-    public function archiveTask(Task $task, bool $archive, $actorId)
+    public function archiveTask(Task $task, bool $archive)
     {
-        return DB::transaction(function () use ($task, $archive, $actorId) {
+        return DB::transaction(function () use ($task, $archive) {
             $task->update([
                 'is_archived'   => $archive,
             ]);
 
             activity()
                 ->performedOn($task)
-                ->causedBy($actorId)
+                ->causedBy(Auth::id())
                 ->log($archive ? 'task.archived' : 'task.restored');
 
             return $task;
