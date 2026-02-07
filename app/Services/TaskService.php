@@ -116,7 +116,7 @@ class TaskService
     /**
      * Move task to another column / reorder
      */
-    public function move(Task $task, array $data)
+    public function move(array $data, Task $task)
     {
         return DB::transaction(function () use ($task, $data) {
             $oldColumnId = $task->column_id;
