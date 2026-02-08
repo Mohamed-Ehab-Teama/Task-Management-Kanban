@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Task extends Model
 {
+    use HasFactory;
     use LogsActivity;
     public function getActivitylogOptions(): LogOptions
     {
@@ -27,7 +29,7 @@ class Task extends Model
     // ===========================  Relations
     public function column()
     {
-        return $this->belongsTo(BoardColumn::class, 'column_id');
+        return $this->belongsTo(BoardColumn::class, 'column_id', 'id');
     }
 
     public function board()

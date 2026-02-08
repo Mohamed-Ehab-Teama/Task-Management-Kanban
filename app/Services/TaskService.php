@@ -123,17 +123,71 @@ class TaskService
             $oldPosition = $task->position;
 
             $newColumnId = $data['column_id'];
-            $newPosition = $data['position']
-                ?? (Task::where('column_id', $newColumnId)->max('position') + 1);
+            $newPosition = $data['position'] ?? 1;
+            // $newPosition = $data['position']  ??
+            //     (Task::where('column_id', $newColumnId)->max('position') + 1);
 
-            $newColumn = BoardColumn::where('id', $newColumnId)->first();
-            if ($newColumn->isWIPExceeded) {            // Check WIP Limit
-                throw new \Exception("Cannot move task: WIP limit reached for column '{$newColumn->name}'");
+            // if ($oldColumnId == $newColumnId) {
+            //     // Moving **within same column**
+            //     if ($newPosition < $oldPosition) {
+            //         Task::where('column_id', $newColumnId)
+            //             ->whereBetween('position', [$newPosition, $oldPosition - 1])
+            //             ->increment('position');
+            //     } elseif ($newPosition > $oldPosition) {
+            //         Task::where('column_id', $newColumnId)
+            //             ->whereBetween('position', [$oldPosition + 1, $newPosition])
+            //             ->decrement('position');
+            //     }
+            // } else {
+            //     // Moving **to a new column**
+            //     Task::where('column_id', $newColumnId)
+            //         ->where('position', '>=', $newPosition)
+            //         ->increment('position');
+
+            //     // Fix old column positions
+            //     Task::where('column_id', $oldColumnId)
+            //         ->where('position', '>', $oldPosition)
+            //         ->decrement('position');
+            // }
+
+            if ($oldColumnId == $newColumnId) {
+                // Moving **within the same column**
+                if ($newPosition < $oldPosition) {
+                    // Moving up: shift tasks down
+                    Task::where('column_id', $newColumnId)
+                        ->whereBetween('position', [$newPosition, $oldPosition - 1])
+                        ->increment('position');
+                } elseif ($newPosition > $oldPosition) {
+                    // Moving down: shift tasks up
+                    Task::where('column_id', $newColumnId)
+                        ->whereBetween('position', [$oldPosition + 1, $newPosition])
+                        ->decrement('position');
+                }
+            } else {
+                // Moving **to a new column**
+                $newColumnTasks = Task::where('column_id', $newColumnId)
+                    ->orderBy('position')
+                    ->get();
+
+                // Shift tasks in new column after insert position
+                foreach ($newColumnTasks as $i => $t) {
+                    if ($i >= $newPosition - 1) {
+                        $t->update(['position' => $i + 2]);
+                    } else {
+                        $t->update(['position' => $i + 1]);
+                    }
+                }
+
+                // Fix old column positions
+                Task::where('column_id', $oldColumnId)
+                    ->where('position', '>', $oldPosition)
+                    ->decrement('position');
             }
 
-            Task::where('column_id', $newColumnId)
-                ->where('position', '>=', $newPosition)
-                ->increment('position');
+            // $newColumn = BoardColumn::where('id', $newColumnId)->first();
+            // if ($newColumn->isWIPExceeded()) {            // Check WIP Limit
+            //     throw new \Exception("Cannot move task: WIP limit reached for column '{$newColumn->name}'");
+            // }
 
             // Update
             $task->update([
@@ -153,7 +207,14 @@ class TaskService
                 ])
                 ->log('task.moved');
 
-            return $task;
+            // return $task;
+            return [
+                'task' => $task,
+                'column_tasks' => Task::where('column_id', $newColumnId)
+                    // ->orderBy('position')
+                    // ->orderBy('updated_at')
+                    ->get(['id', 'position']),
+            ];
         });
     }
 

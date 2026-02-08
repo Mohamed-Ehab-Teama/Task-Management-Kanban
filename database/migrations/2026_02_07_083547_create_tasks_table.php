@@ -29,7 +29,7 @@ return new class extends Migration
                 'Medium',
                 'High',
                 'Urgent'
-            ])->default('medium');
+            ])->default('Medium');
 
             $table->date('due_date')->nullable();
             $table->integer('estimate_minutes')->nullable();

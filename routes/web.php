@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\BoardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -20,12 +23,34 @@ Route::middleware('auth')->group(function () {
 
 
 
+Route::middleware(['auth'])->group(function () {
+
+    // Board
+    Route::get('/board', [BoardController::class, 'index'])
+        ->name('home.board');
+});
 
 
 
 
+Route::middleware(['auth'])
+    ->group(function () {
 
 
+        Route::resource('tasks', TaskController::class)
+            ->except(['edit', 'create']);
+
+        Route::post('tasks/{task}/move', [TaskController::class, 'move'])
+            ->name('tasks.move');
+
+        Route::post('tasks/{task}/assign', [TaskController::class, 'assignUsers'])
+            ->name('tasks.assignUsers');
+
+        Route::post('tasks/{task}/archive', [TaskController::class, 'archive'])
+            ->name('tasks.archive');
+        // 
+
+    });
 
 
 
@@ -42,5 +67,5 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 Route::fallback(function () {
-    return view('welcome');
+    return route('home.board');
 });

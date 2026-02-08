@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users', 'id');
             $table->foreignId('team_id')->constrained('teams', 'id');
 
-            $table->enum('role', ['admin', 'mnager', 'member']);
+            $table->enum('role', ['admin', 'manager', 'member']);
 
             $table->timestamps();
 
